@@ -18,8 +18,6 @@ import sys
 import subprocess
 import argparse
 
-# ── helpers ──────────────────────────────────────────────────────────────────
-
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
 def ok(msg):   print(f"  [OK]  {msg}")
@@ -28,7 +26,6 @@ def err(msg):  print(f"  [ERR] {msg}")
 def hdr(msg):  print(f"\n{'='*60}\n  {msg}\n{'='*60}")
 
 def run_script(script_path, description):
-    """Run a pipeline script and exit on failure."""
     print(f"\n  >> {description}")
     if not os.path.exists(script_path):
         err(f"Cannot find script: {script_path}")
@@ -40,10 +37,7 @@ def run_script(script_path, description):
         err(f"{description} — FAILED. Stopping pipeline.")
         sys.exit(1)
 
-# ── checks ───────────────────────────────────────────────────────────────────
-
 def check_env():
-    """Make sure at least one Gemini API key is configured."""
     hdr("Step 1 — Environment Variables")
     env_path = os.path.join(ROOT, ".env")
 
@@ -60,7 +54,7 @@ def check_env():
 """)
         return False
 
-    # Check at least one key is non-placeholder
+  
     found_key = False
     with open(env_path, "r") as f:
         for line in f:
@@ -81,7 +75,6 @@ def check_env():
 
 
 def check_databases():
-    """Verify the pre-built Qdrant and SQLite databases are present."""
     hdr("Step 2 — Pre-built Databases")
 
     sqlite_path = os.path.join(ROOT, "db", "tesla.db")
@@ -138,7 +131,6 @@ def check_voice():
         return False
 
 
-# ── rebuild pipeline ─────────────────────────────────────────────────────────
 
 def run_full_rebuild():
     """Run the complete ingestion pipeline (only needed for custom PDFs)."""
@@ -172,7 +164,6 @@ def run_full_rebuild():
     print("  The knowledge base has been rebuilt with your documents.\n")
 
 
-# ── main ─────────────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser(
