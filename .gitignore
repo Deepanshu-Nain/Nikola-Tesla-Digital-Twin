@@ -62,10 +62,11 @@ data/models/
 *.safetensors
 
 # ==============================================================================
-# Databases — Generated at runtime
+# Databases — committed to repo so users skip the build pipeline
+# NOTE: db/tesla.db and db/qdrant/ ARE committed intentionally.
+# Only transient lock files are excluded.
 # ==============================================================================
-db/tesla.db
-db/qdrant/
+db/qdrant/.lock
 
 # ==============================================================================
 # IDE & OS Artifacts

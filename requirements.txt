@@ -1,38 +1,63 @@
 # ==============================================================================
-# Tesla Digital Twin — Python Dependencies
+# Nikola Tesla Digital Twin — Python Requirements
+# ==============================================================================
+# Install with:
+#   pip install -r requirements.txt
+#
+# GPU users (recommended for fast voice synthesis):
+#   pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+#   pip install -r requirements.txt
+#
+# Python 3.10+ required.
 # ==============================================================================
 
-# --- Core LLM & Embeddings ---
-google-genai>=1.0.0
 
-# --- Agentic Framework ---
+# --- Core LLM & Embeddings (Google Gemini) ---
+google-genai>=1.16.0
+
+
+# --- Agentic Framework (LangGraph state machine) ---
 langgraph>=0.2.0
 langchain-core>=0.2.0
 
-# --- Vector Database ---
+
+# --- Vector Database (local file-based Qdrant) ---
 qdrant-client>=1.9.0
 
-# --- Retrieval & Reranking ---
+
+# --- Retrieval & Cross-Encoder Reranking ---
 sentence-transformers>=3.0.0
 
-# --- Document Parsing ---
-pymupdf>=1.24.0          # fitz — PDF parsing
 
-# --- Voice Synthesis ---
+# --- Document Parsing (PDF → text via PyMuPDF) ---
+# NOTE: import name is `fitz`, install name is `pymupdf`
+pymupdf>=1.24.0
+
+
+# --- Voice Synthesis (F5-TTS — real-time voice cloning) ---
+# Requires PyTorch (see GPU note above)
 f5-tts>=1.0.0
 torch>=2.0.0
 torchaudio>=2.0.0
 soundfile>=0.12.0
 
-# --- Audio Utilities ---
+
+# --- Audio Format Conversion (MP3 → WAV for reference voice) ---
 pydub>=0.25.0
 
-# --- Local Metadata Enrichment (Ollama) ---
+
+# --- Local Metadata Enrichment (Ollama Python client) ---
+# The actual Ollama daemon must be installed separately:
+#   https://ollama.ai/download
+# Then pull the model:
+#   ollama pull qwen2.5:3b
 ollama>=0.3.0
 pydantic>=2.0.0
+
 
 # --- Web UI ---
 gradio>=5.0.0
 
-# --- Environment ---
+
+# --- Environment Variables ---
 python-dotenv>=1.0.0

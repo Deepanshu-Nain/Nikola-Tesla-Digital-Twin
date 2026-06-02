@@ -6,6 +6,59 @@ A voice-interactive AI agent that **speaks, thinks, and answers as Nikola Tesla*
 
 ---
 
+## 🚀 Quick Start (3 Steps for New Users)
+
+The knowledge base is **pre-built and ships with this repo** — you do **not** need to re-index anything.
+
+### Step 1 — Install dependencies
+
+```bash
+git clone https://github.com/Deepanshu-Nain/Nikola-Tesla-Digital-Twin.git
+cd Nikola-Tesla-Digital-Twin
+pip install -r requirements.txt
+```
+
+> **GPU strongly recommended** for F5-TTS voice synthesis. CPU works but is very slow.  
+> GPU users — install PyTorch with CUDA first:
+> ```bash
+> pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+> pip install -r requirements.txt
+> ```
+
+### Step 2 — Configure your API keys
+
+```bash
+# Mac/Linux
+cp .env.sample .env
+
+# Windows
+copy .env.sample .env
+```
+
+Open `.env` and add your **Google Gemini API key(s)** (free at [aistudio.google.com](https://aistudio.google.com)):
+
+```env
+GEMINI_API_KEY_1=your_real_key_here
+GEMINI_API_KEY_2=optional_second_key   # helps bypass rate limits
+GEMINI_API_KEY_3=optional_third_key
+```
+
+### Step 3 — Add Tesla's reference voice & launch
+
+Place a clean Tesla voice WAV at `data/raw_audio/tesla_reference.wav`  
+*(or convert from MP3: `python src/convert_audio.py`)*
+
+Then validate your setup and launch:
+
+```bash
+python setup.py       # checks env + databases + voice file
+python src/app.py     # starts the Gradio UI
+```
+
+Open **http://127.0.0.1:7860** and start talking to Tesla. ⚡
+
+---
+
 ## 🏗️ Architecture Overview
 
 ```
@@ -14,48 +67,47 @@ User (Voice / Text)
         ▼
 ┌───────────────────┐
 │   Gradio UI       │  ← app.py  (Voice + Text interface)
-│  (app.py)         │
 └────────┬──────────┘
          │  LangGraph State Machine
          ▼
-┌────────────────────────────────────────────────┐
-│               AGENT GRAPH (graph.py)           │
-│                                                │
-│  [Gatekeeper] → [Memory] → [Librarian] → [Synthesizer] │
-└────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                  AGENT GRAPH  (graph.py)              │
+│                                                       │
+│  [Gatekeeper] → [Memory] → [Librarian] → [Synthesizer]│
+└──────────────────────────────────────────────────────┘
          │              │            │
          ▼              ▼            ▼
   SQLite (tesla.db)  Qdrant DB   Gemini 2.5 Flash
-  (user facts)       (vectors)   (Tesla persona)
+  (user memory)      (vectors)   (Tesla persona)
 ```
 
 ---
 
 ## 🧠 RAG Pipeline
 
-### Phase 1 — Indexing (run once via `setup.py`)
+### Phase 1 — Indexing (already done — databases ship with repo)
 
 | Step | Script | Description |
 |------|--------|-------------|
 | 1 | `databases.py` | Initialize SQLite + Qdrant |
 | 2 | `pdf_parser.py` | Extract raw text from PDFs via PyMuPDF |
-| 3 | `chapter_detector.py` | Group pages into structured chapters |
-| 4 | `chunker.py` | Sliding-window chunking (4000 chars, 200 overlap) |
+| 3 | `chapter_detector.py` | Group pages into chapters |
+| 4 | `chunker.py` | Sliding-window chunking (4 000 chars, 200 overlap) |
 | 5 | `enricher.py` | Local AI metadata extraction (Ollama + Qwen 2.5 3B) |
-| 6 | `vectorizer.py` | Embed chunks with `gemini-embedding-2`, inject into Qdrant |
+| 6 | `vectorizer.py` | Embed with `gemini-embedding-2` → inject into Qdrant |
 
 ### Phase 2 — Retrieval (every query)
 
 ```
 User Query
     │
-    ├─► [Timeline Agent]  SQL lookup if year detected (e.g. "what happened in 1893?")
+    ├─► [Timeline Agent]  SQL exact-year lookup (e.g. "what happened in 1893?")
     │
     └─► [Librarian RAG]
             │
-            ├─ 1. Query Expansion  (Gemini 2.5 Flash rewrites query)
+            ├─ 1. Query Expansion  (Gemini rewrites query for better recall)
             ├─ 2. Embedding        (gemini-embedding-2 → 3072-dim vector)
-            ├─ 3. ANN Search       (Qdrant cosine similarity, top-15 candidates)
+            ├─ 3. ANN Search       (Qdrant cosine, top-15 candidates)
             └─ 4. Cross-Encoder Reranking (ms-marco-MiniLM-L-6-v2, top-3 final)
 ```
 
@@ -69,10 +121,10 @@ User Query
             (system-prompted as Tesla)
                         │
                         ▼
-               Tesla's response (50-80 words)
+              50-80 word Tesla response
                         │
                         ▼
-              F5-TTS voice cloning → WAV audio
+              F5-TTS voice cloning → WAV
 ```
 
 ---
@@ -95,95 +147,25 @@ User Query
 
 ---
 
-## 🚀 Quick Start
-
-### 1. Clone the repo
-
-```bash
-git clone https://github.com/Deepanshu-Nain/Nikola-Tesla-Digital-Twin.git
-cd Nikola-Tesla-Digital-Twin
-```
-
-### 2. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-> **GPU strongly recommended** — F5-TTS voice cloning is very slow on CPU.
-
-### 3. Set up environment variables
-
-```bash
-cp .env.sample .env
-# Edit .env and fill in your Gemini API keys
-```
-
-```env
-GEMINI_API_KEY_1=your_key_here
-GEMINI_API_KEY_2=your_key_here   # optional — for round-robin rate limit bypass
-GEMINI_API_KEY_3=your_key_here   # optional
-```
-
-### 4. Add source documents
-
-Place Tesla's PDF documents inside `data/raw/`:
-- *My Inventions* (Tesla's autobiography) — primary knowledge source
-- Any other Tesla-related PDFs you want indexed
-
-### 5. Add Tesla reference voice
-
-Place a clean Tesla voice recording at:
-```
-data/raw_audio/tesla_reference.wav
-```
-If you only have an MP3, convert it first:
-```bash
-python src/convert_audio.py
-```
-
-### 6. Build the knowledge base (one-time)
-
-```bash
-python setup.py
-```
-
-This runs the full indexing pipeline (~5-15 min depending on chunk count and API rate limits).
-
-> **Requirement:** [Ollama](https://ollama.ai/) must be running locally with `qwen2.5:3b` pulled:
-> ```bash
-> ollama pull qwen2.5:3b
-> ```
-
-### 7. Launch the Digital Twin
-
-```bash
-python src/app.py
-```
-
-Open `http://127.0.0.1:7860` in your browser.
-
----
-
 ## 📁 Project Structure
 
 ```
 tesla-twin/
-├── .env.sample              # Environment variable template
+├── .env.sample              # Environment variable template (copy → .env)
 ├── .gitignore
 ├── requirements.txt
-├── setup.py                 # One-click indexing pipeline runner
+├── setup.py                 # Smart validator & rebuild orchestrator
 │
 ├── data/
-│   ├── raw/                 # Input PDFs (not committed)
-│   ├── raw_audio/           # Tesla reference voice WAV
-│   ├── processed/           # Intermediate JSON files (generated)
-│   ├── audio_outputs/       # TTS output WAVs (generated at runtime)
-│   └── models/              # Local ONNX models (not committed, too large)
+│   ├── raw/                 # Put your PDFs here (not committed)
+│   ├── raw_audio/           # Tesla reference voice WAV (add manually)
+│   ├── processed/           # Intermediate JSON — generated, not committed
+│   ├── audio_outputs/       # TTS output WAVs — generated at runtime
+│   └── models/              # Local ONNX models — not committed (too large)
 │
-├── db/
-│   ├── tesla.db             # SQLite — user memory (generated)
-│   └── qdrant/              # Qdrant vector store (generated)
+├── db/                      # ✅ PRE-BUILT — ships with repo
+│   ├── tesla.db             # SQLite (user memory + timeline)
+│   └── qdrant/              # Qdrant vector store (Tesla knowledge base)
 │
 └── src/
     ├── app.py               # Main Gradio UI + voice pipeline
@@ -191,18 +173,18 @@ tesla-twin/
     ├── convert_audio.py     # MP3 → WAV conversion utility
     │
     ├── agents/
-    │   └── graph.py         # LangGraph state machine
+    │   └── graph.py         # LangGraph state machine (4 nodes)
     │
-    ├── ingest/              # One-time indexing pipeline
-    │   ├── databases.py     # DB initialization
-    │   ├── pdf_parser.py    # PyMuPDF text extraction
-    │   ├── chapter_detector.py  # Chapter grouping
-    │   ├── chunker.py       # Sliding-window chunking
-    │   ├── enricher.py      # Local AI metadata extraction
-    │   └── vectorizer.py    # Embedding + Qdrant injection
+    ├── ingest/              # Indexing pipeline (already run — for reference)
+    │   ├── databases.py
+    │   ├── pdf_parser.py
+    │   ├── chapter_detector.py
+    │   ├── chunker.py
+    │   ├── enricher.py
+    │   └── vectorizer.py
     │
     ├── rag/
-    │   ├── librarian.py     # Query expansion → ANN search → reranking
+    │   ├── librarian.py     # Query expansion → ANN → reranking
     │   └── timeline_agent.py  # SQL year-based lookup
     │
     ├── memory/
@@ -217,23 +199,29 @@ tesla-twin/
 
 ---
 
+## 🔄 Re-indexing with Custom Documents (Advanced)
+
+Only needed if you want to add your own Tesla PDFs to the knowledge base:
+
+1. Install [Ollama](https://ollama.ai/download) and pull the model:
+   ```bash
+   ollama pull qwen2.5:3b
+   ```
+2. Place your PDFs in `data/raw/`
+3. Run the full rebuild:
+   ```bash
+   python setup.py --rebuild
+   ```
+
+---
+
 ## 🔑 API Keys
 
-This project uses **Google Gemini**. You can register multiple keys to bypass the free-tier rate limits (the `api_manager.py` rotates them automatically):
-
-- Get keys at: https://aistudio.google.com/
-- Add them to your `.env` as `GEMINI_API_KEY_1`, `GEMINI_API_KEY_2`, etc.
+- Get free keys at: **https://aistudio.google.com/**
+- Add multiple keys (`GEMINI_API_KEY_1`, `GEMINI_API_KEY_2`, ...) to rotate around free-tier rate limits automatically.
 
 ---
 
 ## 📝 Author
 
 **Deepanshu Nain** — Roll No: 25/B01/045
-
----
-
-## ⚠️ Notes
-
-- The `data/` and `db/` directories (processed data, vector store, audio outputs) are **not committed** — they are generated by running `setup.py`.
-- Large model files (`*.onnx`, `*.bin`) are also excluded.
-- The reference voice audio is not committed; provide your own.
