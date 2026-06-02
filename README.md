@@ -3,19 +3,19 @@ Viewed README.md:1-2
 Below is the **full README** that was generated in the previous step. You can copy‑paste it into `README.md` and edit as you wish.
 
 ```markdown
-# Nikola Tesla Digital Twin
+Nikola Tesla Digital Twin
 
-> *"The present is theirs; the future, for which I have really worked, is mine."* — Nikola Tesla
+> "The present is theirs; the future, for which I have really worked, is mine." — Nikola Tesla
 
-A voice-interactive AI agent that **speaks, thinks, and answers as Nikola Tesla** — powered by a full RAG pipeline, long-term memory, and real-time voice cloning.
+A voice-interactive AI agent that speaks, thinks, and answers as Nikola Tesla — powered by a full RAG pipeline, long-term memory, and real-time voice cloning.
 
----
 
-##  Quick Start (3 Steps)
 
-The **knowledge base, PDFs, and reference voice are all pre-built and ship with this repo** — you do not need to re-index anything.
+Quick Start (3 Steps)
 
-### Step 1 — Clone & Install
+The knowledge base, PDFs, and reference voice are all pre-built and ship with this repo— you do not need to re-index anything.
+
+Step 1 — Clone & Install
 
 ```bash
 git clone https://github.com/Deepanshu-Nain/Nikola-Tesla-Digital-Twin.git
@@ -23,7 +23,7 @@ cd Nikola-Tesla-Digital-Twin
 pip install -r requirements.txt
 ```
 
-> **GPU strongly recommended** for real-time voice synthesis (F5‑TTS).  
+> GPU strongly recommended for real-time voice synthesis (F5‑TTS).  
 > GPU users — install PyTorch with CUDA first:
 > ```bash
 > pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
