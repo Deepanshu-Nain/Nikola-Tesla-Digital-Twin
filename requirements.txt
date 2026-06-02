@@ -1,0 +1,38 @@
+# ==============================================================================
+# Tesla Digital Twin — Python Dependencies
+# ==============================================================================
+
+# --- Core LLM & Embeddings ---
+google-genai>=1.0.0
+
+# --- Agentic Framework ---
+langgraph>=0.2.0
+langchain-core>=0.2.0
+
+# --- Vector Database ---
+qdrant-client>=1.9.0
+
+# --- Retrieval & Reranking ---
+sentence-transformers>=3.0.0
+
+# --- Document Parsing ---
+pymupdf>=1.24.0          # fitz — PDF parsing
+
+# --- Voice Synthesis ---
+f5-tts>=1.0.0
+torch>=2.0.0
+torchaudio>=2.0.0
+soundfile>=0.12.0
+
+# --- Audio Utilities ---
+pydub>=0.25.0
+
+# --- Local Metadata Enrichment (Ollama) ---
+ollama>=0.3.0
+pydantic>=2.0.0
+
+# --- Web UI ---
+gradio>=5.0.0
+
+# --- Environment ---
+python-dotenv>=1.0.0

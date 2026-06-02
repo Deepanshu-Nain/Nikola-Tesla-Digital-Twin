@@ -1,0 +1,3 @@
+# Place your Tesla reference voice file here: tesla_reference.wav
+# Run src/convert_audio.py to convert from MP3 if needed.
+# Audio files are excluded from version control (.gitignore).
