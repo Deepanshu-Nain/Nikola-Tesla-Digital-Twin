@@ -3,7 +3,7 @@ Viewed README.md:1-2
 Below is the **full README** that was generated in the previous step. You can copy‑paste it into `README.md` and edit as you wish.
 
 ```markdown
-# ⚡ Nikola Tesla Digital Twin
+# Nikola Tesla Digital Twin
 
 > *"The present is theirs; the future, for which I have really worked, is mine."* — Nikola Tesla
 
@@ -11,7 +11,7 @@ A voice-interactive AI agent that **speaks, thinks, and answers as Nikola Tesla*
 
 ---
 
-## 🚀 Quick Start (3 Steps)
+##  Quick Start (3 Steps)
 
 The **knowledge base, PDFs, and reference voice are all pre-built and ship with this repo** — you do not need to re-index anything.
 
@@ -52,11 +52,11 @@ python setup.py       # checks env + databases + voice file
 python src/app.py     # starts the Gradio UI
 ```
 
-Open **http://127.0.0.1:7860** and start talking to Tesla. ⚡
+Open **http://127.0.0.1:7860** and start talking to Tesla. 
 
 ---
 
-## 🗺️ Full Architecture & Pipeline
+##  Full Architecture & Pipeline
 
 ### Ingestion Pipeline (one‑time, already done — ships with repo)
 
@@ -78,8 +78,8 @@ flowchart LR
 flowchart TD
     %% ── Ingestion (top row, green) ──────────────────────────────
     I1([ Collect PDFs\n& reference audio]) --> I2([ Place in data/raw\n& data/raw_audio])
-    I2 --> I3([⚙️ Run ingest\nsetup.py --rebuild])
-    I3 --> I4([🗄️ Qdrant vector DB\n+ SQLite timeline])
+    I2 --> I3([ Run ingest\nsetup.py --rebuild])
+    I3 --> I4([ Qdrant vector DB\n+ SQLite timeline])
 
     %% ── Runtime entry (yellow) ──────────────────────────────────
     I4 --> UI([ User input\nGradio UI])
@@ -93,7 +93,7 @@ flowchart TD
     MEM --> LIB
 
     %% ── Librarian + RAG (blue) ──────────────────────────────────
-    LIB([📚 Librarian]) --> TL([ Timeline Agent\nSQL exact-year lookup\noptional])
+    LIB([ Librarian]) --> TL([ Timeline Agent\nSQL exact-year lookup\noptional])
     LIB --> QE([ Query Expansion\nGemini rewrites query])
     QE --> EMB([ Embedding\ngemini-embedding-2\n3072-dim vector])
     EMB --> ANN([ Qdrant ANN Search\ntop‑15 candidates])
@@ -139,7 +139,7 @@ flowchart TD
 
 ---
 
-## 🧠 RAG Pipeline — Step by Step
+##  RAG Pipeline — Step by Step
 
 ### Phase 1 — Ingestion (already run — all outputs ship with this repo)
 
