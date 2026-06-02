@@ -1,13 +1,5 @@
 """
 Tesla Digital Twin — Smart Setup Script
-----------------------------------------
-Everything is pre-built and ships with this repo:
-  ✅  db/tesla.db            — SQLite (user memory + timeline)
-  ✅  db/qdrant/             — Qdrant vector store (Tesla knowledge)
-  ✅  data/raw/              — Source PDFs
-  ✅  data/processed/        — Chunked + enriched JSON files
-  ✅  data/raw_audio/        — Tesla reference voice WAV
-
 This script will:
   1. Verify your .env file has at least one real Gemini API key.
   2. Confirm that the pre-built databases are present.
