@@ -30,41 +30,39 @@ ENV/
 .conda/
 
 # ==============================================================================
-# Data — Raw PDFs (large, copyrighted)
+# Data — Raw PDFs — NOW COMMITTED (all small enough for GitHub)
 # ==============================================================================
-data/raw/*.pdf
-data/raw/*.PDF
+# data/raw/*.pdf   <-- intentionally NOT ignored, PDFs ship with repo
 
 # ==============================================================================
-# Data — Generated / Processed (reproducible via setup.py)
+# Data — Processed JSONs — NOW COMMITTED (ships with repo)
 # ==============================================================================
-data/processed/parsed_pages.json
-data/processed/chapters.json
-data/processed/structured_chapters.json
-data/processed/chunks.json
-data/processed/enriched_chunks.json
+# data/processed/  <-- intentionally NOT ignored
 
 # ==============================================================================
-# Data — Audio (large binary, generated at runtime)
+# Data — Reference Audio — NOW COMMITTED
 # ==============================================================================
-data/audio_outputs/
-data/raw_audio/*.wav
-data/raw_audio/*.mp3
+# data/raw_audio/tesla_reference.wav  <-- intentionally NOT ignored
 
 # ==============================================================================
-# Data — Large ML Models (too big for GitHub, use Git-LFS or skip)
+# Data — Runtime Audio Outputs (generated per session, do NOT commit)
 # ==============================================================================
-data/models/
-*.onnx
-*.bin
-*.pt
-*.pth
-*.safetensors
+data/audio_outputs/*.wav
+data/audio_outputs/*.mp3
+
+# ==============================================================================
+# Data — Large ML Models (too big for GitHub even with Git-LFS)
+# ==============================================================================
+data/models/*.onnx
+data/models/*.bin
+data/models/*.pt
+data/models/*.pth
+data/models/*.safetensors
 
 # ==============================================================================
 # Databases — committed to repo so users skip the build pipeline
 # NOTE: db/tesla.db and db/qdrant/ ARE committed intentionally.
-# Only transient lock files are excluded.
+# Only the transient lock file is excluded.
 # ==============================================================================
 db/qdrant/.lock
 

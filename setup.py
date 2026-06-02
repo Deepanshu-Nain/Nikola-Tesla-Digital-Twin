@@ -1,16 +1,20 @@
 """
 Tesla Digital Twin — Smart Setup Script
 ----------------------------------------
-For MOST users who cloned this repo, the databases are already pre-built
-and shipped inside db/. This script will:
+Everything is pre-built and ships with this repo:
+  ✅  db/tesla.db            — SQLite (user memory + timeline)
+  ✅  db/qdrant/             — Qdrant vector store (Tesla knowledge)
+  ✅  data/raw/              — Source PDFs
+  ✅  data/processed/        — Chunked + enriched JSON files
+  ✅  data/raw_audio/        — Tesla reference voice WAV
 
-  1. Verify your .env file has Gemini API keys.
-  2. Check that the pre-built databases exist (qdrant + SQLite).
-  3. Check that the Tesla reference voice WAV exists.
-  4. Print clear next steps.
+This script will:
+  1. Verify your .env file has at least one real Gemini API key.
+  2. Confirm that the pre-built databases are present.
+  3. Confirm the reference voice file is present.
+  4. Print the launch command.
 
-Only run the FULL REBUILD (--rebuild flag) if you want to re-index
-your own custom PDFs from scratch.
+Use --rebuild only if you want to re-index your own custom PDFs.
 """
 
 import os
@@ -112,21 +116,22 @@ def check_voice():
     if os.path.exists(wav_path) and os.path.getsize(wav_path) > 0:
         size_kb = os.path.getsize(wav_path) // 1024
         ok(f"Reference voice found — tesla_reference.wav ({size_kb} KB)")
+        ok("Voice cloning ready (ships with repo).")
         return True
     else:
-        warn("tesla_reference.wav not found!")
+        warn("tesla_reference.wav not found — this file should have cloned with the repo.")
         print("""
-  The voice cloning engine (F5-TTS) needs a reference audio clip of
-  Tesla's voice to clone from.
-
   Fix:
-    1. Place a clean WAV file at:  data/raw_audio/tesla_reference.wav
-       (mono, 24kHz recommended)
+    1. Re-clone the repo — the file ships with it:
+           git clone https://github.com/Deepanshu-Nain/Nikola-Tesla-Digital-Twin.git
 
-    2. OR if you have an MP3, convert it first:
+    2. OR place your own WAV at:  data/raw_audio/tesla_reference.wav
+       (mono, 24 kHz recommended)
+
+    3. OR convert from MP3:
            python src/convert_audio.py
 
-  Without this file the app will still run but voice output will fail.
+  Without this file, voice output will fall back to silence.
 """)
         return False
 
