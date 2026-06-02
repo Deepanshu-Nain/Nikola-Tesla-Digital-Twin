@@ -1,7 +1,3 @@
-Viewed README.md:1-2
-
-Below is the **full README** that was generated in the previous step. You can copy‑paste it into `README.md` and edit as you wish.
-
 ```markdown
 Nikola Tesla Digital Twin
 
