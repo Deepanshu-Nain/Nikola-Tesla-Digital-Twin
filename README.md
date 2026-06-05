@@ -273,14 +273,5 @@ Tesla's digital twin is grounded in three resources:
 | Web UI | Gradio |
 | Memory | SQLite |
 
----
-
-## 👨‍💻 Author
-
-**Deepanshu Nain**  
-Roll No: 25/B01/045  
-AIMS Project — Digital Twin
-
----
 
 *"If you only knew the magnificence of the 3, 6 and 9, then you would have a key to the universe."*
