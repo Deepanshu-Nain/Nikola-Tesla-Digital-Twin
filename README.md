@@ -22,28 +22,64 @@ A voice-interactive AI digital twin of **Nikola Tesla**, powered by Google Gemin
 
 ```mermaid
 flowchart TD
-    A([🎙️ User Voice / Text Input]) --> B[Gemini 2.5 Flash\nSpeech → Text]
-    B --> C
+    I1([ Collect PDFs\n& reference audio]) --> I2([ Place in data/raw\n& data/raw_audio])
+    I2 --> I3([ Run ingest\nsetup.py --rebuild])
+    I3 --> I4([ Qdrant vector DB\n+ SQLite timeline])
 
-    subgraph LangGraph["🔁 LangGraph State Machine"]
-        C[Gatekeeper\nRoute & pass state] --> D
-        D[Memory Node\nFetch user facts from SQLite] --> E
-        E --> F
+    %% ── Runtime entry (yellow) ──────────────────────────────────
+    I4 --> UI([ User input\nGradio UI])
+    UI --> STT([ STT\nGemini 2.5 Flash\nif voice input])
+    STT --> LG([ LangGraph\nState Machine])
 
-        subgraph Librarian["📚 Librarian Node"]
-            F[Timeline Agent\nSQL date/event lookup] --> G
-            G[Query Expansion\nGemini enriches query] --> H
-            H[Embedding\ngemini-embedding-2] --> I
-            I[ANN Search\nTop-15 from Qdrant] --> J
-            J[Cross-Encoder Reranking\nKeep TOP 3] --> K
-            K[Merger\nTimeline + TOP 3 = context]
-        end
+    %% ── Agent nodes (yellow) ────────────────────────────────────
+    LG --> GK([ Gatekeeper\nrouting node])
+    LG --> MEM([ Memory\nSQLite user facts])
+    GK --> LIB
+    MEM --> LIB
 
-        K --> L[Synthesizer Node\nGemini 2.5 Flash → Tesla persona]
-    end
+    %% ── Librarian + RAG (blue) ──────────────────────────────────
+    LIB([ Librarian]) --> TL([ Timeline Agent\nSQL exact-year lookup\noptional])
+    LIB --> QE([ Query Expansion\nGemini rewrites query])
+    QE --> EMB([ Embedding\ngemini-embedding-2\n3072-dim vector])
+    EMB --> ANN([ Qdrant ANN Search\ntop-15 candidates])
+    ANN --> RR([ Cross-Encoder\nRerank\nms-marco-MiniLM])
+    RR --> COMB([ Combine retrieved\ncontext + SQL facts])
+    TL --> COMB
 
-    L --> M[📝 Text displayed in Gradio UI]
-    L --> N[🔊 F5-TTS Voice Cloning\nSentence-by-sentence playback]
+    %% ── Synthesizer (blue) ──────────────────────────────────────
+    COMB --> SYN([ Synthesizer\nGemini 2.5 Flash\nTesla persona prompt])
+    MEM --> SYN
+
+    %% ── Output (yellow/bottom) ──────────────────────────────────
+    SYN --> FT([ Final text\n50-80 words as Tesla])
+    FT --> SP([ Split into\nsentences])
+    SP --> TTS([ F5-TTS\nVoice Cloning])
+    TTS --> OUT([ Stream audio\n+ chat display])
+
+    %% ── Styles ──────────────────────────────────────────────────
+    style I1  fill:#a8e6a3,stroke:#4caf50,color:#000
+    style I2  fill:#a8e6a3,stroke:#4caf50,color:#000
+    style I3  fill:#a8e6a3,stroke:#4caf50,color:#000
+    style I4  fill:#a8e6a3,stroke:#4caf50,color:#000
+
+    style UI  fill:#fff3a3,stroke:#f0c000,color:#000
+    style STT fill:#fff3a3,stroke:#f0c000,color:#000
+    style LG  fill:#fff3a3,stroke:#f0c000,color:#000
+    style GK  fill:#fff3a3,stroke:#f0c000,color:#000
+    style MEM fill:#fff3a3,stroke:#f0c000,color:#000
+    style OUT fill:#fff3a3,stroke:#f0c000,color:#000
+    style FT  fill:#fff3a3,stroke:#f0c000,color:#000
+    style SP  fill:#fff3a3,stroke:#f0c000,color:#000
+
+    style LIB  fill:#b3e5fc,stroke:#0288d1,color:#000
+    style TL   fill:#b3e5fc,stroke:#0288d1,color:#000
+    style QE   fill:#b3e5fc,stroke:#0288d1,color:#000
+    style EMB  fill:#b3e5fc,stroke:#0288d1,color:#000
+    style ANN  fill:#b3e5fc,stroke:#0288d1,color:#000
+    style RR   fill:#b3e5fc,stroke:#0288d1,color:#000
+    style COMB fill:#b3e5fc,stroke:#0288d1,color:#000
+    style SYN  fill:#b3e5fc,stroke:#0288d1,color:#000
+    style TTS  fill:#b3e5fc,stroke:#0288d1,color:#000
 ```
 
 ---
