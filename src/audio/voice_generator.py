@@ -1,5 +1,6 @@
 import os
 import torch
+import numpy as np
 import soundfile as sf
 from f5_tts import api
 
@@ -37,3 +38,32 @@ def generate_tesla_audio(text_to_speak: str, chunk_index: int = 0) -> str:
     except Exception as e:
         print(f"[Audio] Voice synthesis failed: {e}")
         return None
+
+
+def concatenate_audio_files(paths: list, output_filename: str = "tesla_full_response.wav") -> str:
+    """
+    Merge a list of WAV file paths into a single WAV file.
+    All files must share the same sample rate (guaranteed since they all
+    come from the same F5-TTS engine call).
+    Returns the path to the merged file, or None if the list is empty.
+    """
+    valid_paths = [p for p in paths if p and os.path.exists(p)]
+    if not valid_paths:
+        return None
+
+    arrays = []
+    sample_rate = None
+    for p in valid_paths:
+        data, sr = sf.read(p, dtype="float32")
+        sample_rate = sr
+        arrays.append(data)
+
+    # Add a short 150ms silence between sentences for natural pacing
+    silence = np.zeros(int(sample_rate * 0.15), dtype="float32")
+    merged = arrays[0]
+    for chunk in arrays[1:]:
+        merged = np.concatenate([merged, silence, chunk])
+
+    output_path = os.path.join(OUTPUT_DIR, output_filename)
+    sf.write(output_path, merged, sample_rate)
+    return output_path

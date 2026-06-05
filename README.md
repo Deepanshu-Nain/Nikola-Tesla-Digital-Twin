@@ -1,293 +1,250 @@
-```markdown
-Nikola Tesla Digital Twin
+# ⚡ Nikola Tesla Digital Twin
 
-> "The present is theirs; the future, for which I have really worked, is mine." — Nikola Tesla
+> *"The present is theirs; the future, for which I really worked, is mine."* — Nikola Tesla
 
-A voice-interactive AI agent that speaks, thinks, and answers as Nikola Tesla — powered by a full RAG pipeline, long-term memory, and real-time voice cloning.
+A voice-interactive AI digital twin of **Nikola Tesla**, powered by Google Gemini, LangGraph, Qdrant vector search, and F5-TTS voice cloning. Ask Tesla anything — he will answer in his own voice, drawing from his autobiography, Wikipedia biography, and technical writings.
 
+---
 
+## 🎯 Features
 
-Quick Start (3 Steps)
+- 🎙️ **Voice I/O** — Speak to Tesla via microphone; he replies in a cloned Tesla-like voice (F5-TTS)
+- 💬 **Text Mode** — Type questions directly if you prefer
+- 🧠 **RAG Pipeline** — 9-step retrieval chain: query expansion → ANN search → cross-encoder reranking → grounded answer
+- 🗓️ **Timeline Agent** — Dedicated SQL agent that grounds date/event questions in a structured timeline
+- 🔁 **Long-term Memory** — Remembers facts about the user across the conversation (SQLite)
+- 🔑 **API Key Rotation** — Supports multiple Gemini keys to avoid rate limits
+- ✅ **Pre-built databases ship with the repo** — no ingestion step required for new users
 
-The knowledge base, PDFs, and reference voice are all pre-built and ship with this repo— you do not need to re-index anything.
+---
 
-Step 1 — Clone & Install
+## 🏗️ Architecture
+
+```mermaid
+flowchart TD
+    A([🎙️ User Voice / Text Input]) --> B[Gemini 2.5 Flash\nSpeech → Text]
+    B --> C
+
+    subgraph LangGraph["🔁 LangGraph State Machine"]
+        C[Gatekeeper\nRoute & pass state] --> D
+        D[Memory Node\nFetch user facts from SQLite] --> E
+        E --> F
+
+        subgraph Librarian["📚 Librarian Node"]
+            F[Timeline Agent\nSQL date/event lookup] --> G
+            G[Query Expansion\nGemini enriches query] --> H
+            H[Embedding\ngemini-embedding-2] --> I
+            I[ANN Search\nTop-15 from Qdrant] --> J
+            J[Cross-Encoder Reranking\nKeep TOP 3] --> K
+            K[Merger\nTimeline + TOP 3 = context]
+        end
+
+        K --> L[Synthesizer Node\nGemini 2.5 Flash → Tesla persona]
+    end
+
+    L --> M[📝 Text displayed in Gradio UI]
+    L --> N[🔊 F5-TTS Voice Cloning\nSentence-by-sentence playback]
+```
+
+---
+
+## 📂 Project Structure
+
+```
+tesla-twin/
+├── src/
+│   ├── app.py                  # Gradio UI + main entry point
+│   ├── api_manager.py          # Round-robin Gemini key pool
+│   ├── convert_audio.py        # MP3 → WAV reference audio helper
+│   ├── agents/
+│   │   └── graph.py            # LangGraph state machine (full pipeline)
+│   ├── audio/
+│   │   └── voice_generator.py  # F5-TTS voice cloning engine
+│   ├── ingest/                 # Ingestion pipeline (run only for custom PDFs)
+│   │   ├── pdf_parser.py
+│   │   ├── chapter_detector.py
+│   │   ├── chunker.py
+│   │   ├── enricher.py         # Ollama/Qwen2.5 metadata enrichment
+│   │   ├── vectorizer.py       # Qdrant embedding + indexing
+│   │   ├── databases.py
+│   │   └── timeline.py
+│   ├── memory/
+│   │   └── memory_manager.py   # SQLite long-term user memory
+│   ├── persona/
+│   │   └── tesla_brain.py      # Tesla system prompt + Gemini response
+│   └── rag/
+│       ├── librarian.py        # Full RAG retrieval chain
+│       └── timeline_agent.py   # SQL timeline agent
+├── db/
+│   ├── tesla.db                # SQLite (user memory + timeline) ✅ pre-built
+│   └── qdrant/                 # Qdrant vector store ✅ pre-built
+├── data/
+│   ├── raw/                    # Source PDFs (Tesla autobiography, Wikipedia, tech PDF)
+│   ├── processed/              # Chunked + enriched JSON files
+│   ├── raw_audio/              # tesla_reference.wav (voice cloning reference)
+│   └── audio_outputs/          # Runtime-generated WAV files (gitignored)
+├── setup.py                    # Smart setup validator
+├── requirements.txt
+└── .env.sample                 # API key template
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clone the repo
 
 ```bash
 git clone https://github.com/Deepanshu-Nain/Nikola-Tesla-Digital-Twin.git
 cd Nikola-Tesla-Digital-Twin
-pip install -r requirements.txt
 ```
 
-> GPU strongly recommended for real-time voice synthesis (F5‑TTS).  
-> GPU users — install PyTorch with CUDA first:
-> ```bash
-> pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
-> pip install -r requirements.txt
-> ```
-
-### Step 2 — Configure API Keys
+### 2. Create your `.env` file
 
 ```bash
-cp .env.sample .env        # Mac/Linux
-copy .env.sample .env      # Windows
+# Mac / Linux
+cp .env.sample .env
+
+# Windows
+copy .env.sample .env
 ```
 
-Open `.env` and add your **Google Gemini API key(s)** (free at [aistudio.google.com](https://aistudio.google.com)):
+Open `.env` and add your Gemini API key(s):
 
 ```env
 GEMINI_API_KEY_1=your_real_key_here
-GEMINI_API_KEY_2=optional_second_key   # rotates automatically to avoid rate limits
+GEMINI_API_KEY_2=optional_second_key
 GEMINI_API_KEY_3=optional_third_key
 ```
 
-### Step 3 — Validate & Launch
+> Get a **free** Gemini API key at [aistudio.google.com](https://aistudio.google.com/)  
+> Multiple keys are optional but recommended to avoid rate limits.
+
+### 3. Install dependencies
+
+**GPU users (recommended — voice synthesis is very slow on CPU):**
+```bash
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+pip install -r requirements.txt
+```
+
+**CPU users:**
+```bash
+pip install -r requirements.txt
+```
+
+> **Python 3.10+ required.**
+
+### 4. Validate your setup
 
 ```bash
-python setup.py       # checks env + databases + voice file
-python src/app.py     # starts the Gradio UI
+python setup.py
 ```
 
-Open **http://127.0.0.1:7860** and start talking to Tesla. 
+This checks your `.env`, verifies the pre-built databases, and confirms the voice reference file. Expected output:
+```
+  [OK]  .env found with at least one Gemini API key.
+  [OK]  SQLite database found — tesla.db
+  [OK]  Qdrant vector store found — storage.sqlite
+  [OK]  Reference voice found — tesla_reference.wav
+  ✅ Ready! Start the Digital Twin with:
+
+       python src/app.py
+```
+
+### 5. Launch
+
+```bash
+python src/app.py
+```
+
+Then open **http://127.0.0.1:7860** in your browser.
 
 ---
 
-##  Full Architecture & Pipeline
+## 🗣️ Using the App
 
-### Ingestion Pipeline (one‑time, already done — ships with repo)
-
-```mermaid
-flowchart LR
-    A([ Collect PDFs\n& reference audio]) --> B([ Place in\ndata/raw &\ndata/raw_audio])
-    B --> C([ Run\npython setup.py\n--rebuild])
-    C --> D([ Qdrant vector DB\n+ SQLite timeline])
-
-    style A fill:#a8e6a3,stroke:#4caf50,color:#000
-    style B fill:#a8e6a3,stroke:#4caf50,color:#000
-    style C fill:#a8e6a3,stroke:#4caf50,color:#000
-    style D fill:#a8e6a3,stroke:#4caf50,color:#000
-```
-
-### Complete System Architecture
-
-```mermaid
-flowchart TD
-    %% ── Ingestion (top row, green) ──────────────────────────────
-    I1([ Collect PDFs\n& reference audio]) --> I2([ Place in data/raw\n& data/raw_audio])
-    I2 --> I3([ Run ingest\nsetup.py --rebuild])
-    I3 --> I4([ Qdrant vector DB\n+ SQLite timeline])
-
-    %% ── Runtime entry (yellow) ──────────────────────────────────
-    I4 --> UI([ User input\nGradio UI])
-    UI --> STT([ STT\nGemini 2.5 Flash\nif voice input])
-    STT --> LG([ LangGraph\nState Machine])
-
-    %% ── Agent nodes (yellow) ────────────────────────────────────
-    LG --> GK([ Gatekeeper\nrouting node])
-    LG --> MEM([ Memory\nSQLite user facts])
-    GK --> LIB
-    MEM --> LIB
-
-    %% ── Librarian + RAG (blue) ──────────────────────────────────
-    LIB([ Librarian]) --> TL([ Timeline Agent\nSQL exact-year lookup\noptional])
-    LIB --> QE([ Query Expansion\nGemini rewrites query])
-    QE --> EMB([ Embedding\ngemini-embedding-2\n3072-dim vector])
-    EMB --> ANN([ Qdrant ANN Search\ntop‑15 candidates])
-    ANN --> RR([ Cross‑Encoder\nRerank\nms‑marco‑MiniLM])
-    RR --> COMB([ Combine retrieved\ncontext + SQL facts])
-    TL --> COMB
-
-    %% ── Synthesizer (blue) ──────────────────────────────────────
-    COMB --> SYN([ Synthesizer\nGemini 2.5 Flash\nTesla persona prompt])
-    MEM --> SYN
-
-    %% ── Output (yellow/bottom) ──────────────────────────────────
-    SYN --> FT([ Final text\n50‑80 words as Tesla])
-    FT --> SP([ Split into\nsentences])
-    SP --> TTS([ F5‑TTS\nVoice Cloning])
-    TTS --> OUT([ Stream audio\n+ chat display])
-
-    %% ── Styles ──────────────────────────────────────────────────
-    style I1  fill:#a8e6a3,stroke:#4caf50,color:#000
-    style I2  fill:#a8e6a3,stroke:#4caf50,color:#000
-    style I3  fill:#a8e6a3,stroke:#4caf50,color:#000
-    style I4  fill:#a8e6a3,stroke:#4caf50,color:#000
-
-    style UI  fill:#fff3a3,stroke:#f0c000,color:#000
-    style STT fill:#fff3a3,stroke:#f0c000,color:#000
-    style LG  fill:#fff3a3,stroke:#f0c000,color:#000
-    style GK  fill:#fff3a3,stroke:#f0c000,color:#000
-    style MEM fill:#fff3a3,stroke:#f0c000,color:#000
-    style OUT fill:#fff3a3,stroke:#f0c000,color:#000
-    style FT  fill:#fff3a3,stroke:#f0c000,color:#000
-    style SP  fill:#fff3a3,stroke:#f0c000,color:#000
-
-    style LIB  fill:#b3e5fc,stroke:#0288d1,color:#000
-    style TL   fill:#b3e5fc,stroke:#0288d1,color:#000
-    style QE   fill:#b3e5fc,stroke:#0288d1,color:#000
-    style EMB  fill:#b3e5fc,stroke:#0288d1,color:#000
-    style ANN  fill:#b3e5fc,stroke:#0288d1,color:#000
-    style RR   fill:#b3e5fc,stroke:#0288d1,color:#000
-    style COMB fill:#b3e5fc,stroke:#0288d1,color:#000
-    style SYN  fill:#b3e5fc,stroke:#0288d1,color:#000
-    style TTS  fill:#b3e5fc,stroke:#0288d1,color:#000
-```
+| Mode | How to use |
+|------|-----------|
+| **Voice** | Click the microphone, speak your question, stop recording — Tesla replies in audio |
+| **Text** | Type in the text box and press Enter — Tesla replies in text + audio |
+| **Interrupt** | Click 🛑 **Interrupt** to stop generation / audio playback mid-sentence |
 
 ---
 
-##  RAG Pipeline — Step by Step
+## ⚙️ Configuration
 
-### Phase 1 — Ingestion (already run — all outputs ship with this repo)
+### Multiple API Keys
 
-| Step | Script | What it does |
-|------|--------|-------------|
-| 1 | `databases.py` | Initialise SQLite tables + Qdrant collection |
-| 2 | `pdf_parser.py` | Extract raw text page‑by‑page via PyMuPDF |
-| 3 | `chapter_detector.py` | Group pages by chapter using regex |
-| 4 | `chunker.py` | Sliding‑window chunking — 4 000 chars, 200 overlap |
-| 5 | `enricher.py` | **Local** AI metadata extraction — Ollama + Qwen 2.5 3B (keywords, inventions, topics) |
-| 6 | `vectorizer.py` | Embed each chunk with `gemini-embedding-2` → upsert to Qdrant |
+The API manager supports up to 9 Gemini keys, automatically cycling through them to avoid rate limits. Add them to `.env` as `GEMINI_API_KEY_1`, `GEMINI_API_KEY_2`, etc.
 
-### Phase 2 — Retrieval (every query)
+### Voice Quality
 
-```
-User Query
-    │
-    ├─► Timeline Agent  ──  regex extracts year → SQL exact lookup
-    │                        e.g. "what happened in 1893?" → SQLite hit
-    │
-    └─► Librarian RAG
-            │
-            ├─ 1. Query Expansion   Gemini rewrites query for better semantic recall
-            ├─ 2. Embed             gemini-embedding-2 → 3072‑dim vector
-            ├─ 3. ANN Search        Qdrant cosine similarity, top‑15 candidates
-            └─ 4. Cross‑Encoder     ms‑marco‑MiniLM‑L‑6‑v2 rescores pairs → top‑3
-```
+In `src/audio/voice_generator.py`, the `nfe_step` parameter controls quality vs. speed:
 
-### Phase 3 — Generation & Voice
-
-```
-[Top‑3 chunks] + [SQL facts] + [User memory] + [Last 5 turns]
-                            │
-                            ▼
-                   Gemini 2.5 Flash
-               (Tesla persona system prompt)
-                            │
-                            ▼
-                   50‑80 word response
-                            │
-                     split by sentence
-                            │
-                            ▼
-                  F5‑TTS voice cloning
-               (using tesla_reference.wav)
-                            │
-                            ▼
-               Streamed sentence‑by‑sentence
-               to Gradio audio + chat panel
-```
+| Setting | Value | Best for |
+|---------|-------|----------|
+| Fast (default) | `nfe_step=8` | CPU users |
+| High quality | `nfe_step=16` | GPU users |
 
 ---
 
-## 🔧 Tech Stack
+## 🔄 Rebuilding the Knowledge Base (Optional)
 
-| Layer | Technology |
-|-------|------------|
-| LLM | Google Gemini 2.5 Flash |
-| Embeddings | `gemini-embedding-2` — 3 072‑dim |
-| Agent Framework | LangGraph (state machine) |
-| Vector Store | Qdrant — local file‑based |
-| Relational DB | SQLite |
-| Reranker | `cross-encoder/ms-marco-MiniLM-L-6-v2` |
-| Metadata Enrichment | Ollama — Qwen 2.5 3B (fully local) |
-| Speech‑to‑Text | Gemini 2.5 Flash (audio upload) |
-| Text‑to‑Speech | F5‑TTS — voice cloning |
-| UI | Gradio 6.0 |
-| PDF Parsing | PyMuPDF (`fitz`) |
-| API Key Rotation | Round‑robin pool (`itertools.cycle`) |
+The pre-built databases ship with the repo — **you do not need this step** unless you want to index your own custom PDFs.
 
----
-
-## 📁 Project Structure
-
-```
-tesla-twin/
-├── .env.sample              
-├── .gitignore
-├── requirements.txt
-├── setup.py                 # Smart validator + optional --rebuild flag
-│
-├── data/
-│   ├── raw/                 
-│   │   ├── my_inventions.pdf
-│   │   ├── Nikola_Tesla.pdf
-│   │   └── NIKOLA TESLA 145 YEARS OF VISIONARY IDEAS.pdf
-│   ├── raw_audio/           
-│   │   └── tesla_reference.wav
-│   ├── processed/          
-│   │   ├── parsed_pages.json
-│   │   ├── chapters.json
-│   │   ├── chunks.json
-│   │   └── enriched_chunks.json
-│   ├── audio_outputs/       
-│   └── models/              
-│
-├── db/                      
-│   ├── tesla.db             
-│   └── qdrant/              
-│
-└── src/
-    ├── app.py              
-    ├── api_manager.py       
-    ├── convert_audio.py     
-    │
-    ├── agents/
-    │   └── graph.py        
-    ├── ingest/              
-    │   ├── databases.py
-    │   ├── pdf_parser.py
-    │   ├── chapter_detector.py
-    │   ├── chunker.py
-    │   ├── enricher.py
-    │   └── vectorizer.py
-    ├── rag/
-    │   ├── librarian.py    
-    │   └── timeline_agent.py
-    ├── memory/
-    │   └── memory_manager.py
-    ├── persona/
-    │   └── tesla_brain.py   
-    └── audio/
-        └── voice_generator.py   
+```bash
+python setup.py --rebuild
 ```
 
----
-
-## 🔄 Rebuilding with Custom Documents (Advanced)
-
-Only needed if you want to add **your own PDFs**:
-
-1. Install [Ollama](https://ollama.ai/download) and pull the model:
-   ```bash
-   ollama pull qwen2.5:3b
-   ```
-2. Place your PDFs in `data/raw/`.
-3. Run the full rebuild:
-   ```bash
-   python setup.py --rebuild
-   ```
+> ⚠️ Requires [Ollama](https://ollama.ai/download) with `qwen2.5:3b` pulled:
+> ```bash
+> ollama pull qwen2.5:3b
+> ```
+> The rebuild pipeline uses this local model to enrich chunk metadata (keywords, summaries). It can take 10–30 minutes depending on your API quota.
 
 ---
 
-## 🔑 API Keys
+## 📚 Knowledge Base Sources
 
-- Get free Gemini API keys at **https://aistudio.google.com/**
-- Add multiple keys to avoid free‑tier rate limits — the `api_manager.py` rotates them automatically via `itertools.cycle`.
+Tesla's digital twin is grounded in three resources:
+
+1. **Wikipedia — Nikola Tesla** — Life events, biographical facts, and legacy
+2. **My Inventions: The Autobiography of Nikola Tesla** — First-person voice, thinking patterns, and personal history
+3. **Tesla Technical Writings PDF** — Deep technical expertise on AC, wireless energy, and electromagnetic theory
+
+---
+
+## 🐢 Known Limitations
+
+- **Voice is slow on CPU** — F5-TTS voice cloning requires significant compute. A CUDA-capable GPU is strongly recommended for a smooth experience.
+- **Ollama is only needed for `--rebuild`** — regular users who just run `python src/app.py` do NOT need Ollama installed.
+- **Voice reference is Tesla-like, not original** — No original recording of Nikola Tesla exists. The reference voice is the closest publicly available resemblance, converted from MP3 to WAV.
 
 ---
 
-## 📝 Author
+## 🛠️ Tech Stack
 
-**Deepanshu Nain** — Roll No: 25/B01/045
+| Component | Technology |
+|-----------|-----------|
+| LLM & Embeddings | Google Gemini 2.5 Flash + gemini-embedding-2 |
+| Agent Framework | LangGraph |
+| Vector Database | Qdrant (local file-based) |
+| Reranking | sentence-transformers cross-encoder |
+| PDF Parsing | PyMuPDF (fitz) |
+| Voice Synthesis | F5-TTS |
+| Metadata Enrichment | Ollama + Qwen2.5 3B (rebuild only) |
+| Web UI | Gradio |
+| Memory | SQLite |
 
 ---
+
+## 👨‍💻 Author
+
+**Deepanshu Nain**  
+Roll No: 25/B01/045  
+AIMS Project — Digital Twin
+
+---
+
+*"If you only knew the magnificence of the 3, 6 and 9, then you would have a key to the universe."*
